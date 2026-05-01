@@ -38,8 +38,7 @@ const fisherYatesShuffle = (arr) => { // https://dev.to/asayerio_techblog/foreve
 
 const board = document.getElementById('board');
 
-let allWords = GROUPS.flatMap(c => c.words);
-allWords = fisherYatesShuffle(allWords);
+let allWords;
 
 let selectedButtons = [];
 
@@ -47,20 +46,34 @@ const previousGuesses = new Set();
 
 let remainingLives = 4;
 
-allWords.forEach(word => { // Create word elements
-    const button = document.createElement('button');
-    button.classList.add('word_button', 'color_default');
-    button.textContent = word;
-    button.onclick = () => wordSelect(button);
-    board.appendChild(button);
-})
+setBoard();
+
+function setBoard() {
+    allWords = GROUPS.flatMap(c => c.words);
+    allWords = fisherYatesShuffle(allWords);
+    selectedButtons = [];
+    previousGuesses.clear();
+    remainingLives = 4;
+
+    document.getElementById('board').innerHTML = '';
+    document.getElementById('solved').innerHTML = '';
+    document.querySelectorAll('.mark').forEach(mark => mark.classList.remove('guessed'));
+
+    allWords.forEach(word => {
+        const button = document.createElement('button');
+        button.classList.add('word_button', 'color_default');
+        button.textContent = word;
+        button.onclick = () => wordSelect(button);
+        board.appendChild(button);
+    });
+
+    document.getElementById('guess-button').disabled = true;
+    document.getElementById('deselect-button').disabled = true;
+}
 
 function getGroup(button) { // Find group of word
     return GROUPS.find(c => c.words.includes(button.textContent));
 }
-
-document.getElementById('guess-button').disabled = true; // at start
-document.getElementById('deselect-button').disabled = true; // at start
 
 let guessKey;
 
@@ -79,7 +92,7 @@ function wordSelect(button) {
     document.getElementById('deselect-button').disabled = selectedButtons.length === 0;
 }
 
-async function animateSelectedButtons(success) {
+async function animateSelectedButtons(success) { // This function was made by Claude AI
     const buttons = [...selectedButtons].sort((a, b) => 
         a.getBoundingClientRect().left - b.getBoundingClientRect().left
     );
@@ -119,13 +132,24 @@ document.getElementById('guess-button').onclick = async () => {
         solveButtons();
     } else {
         previousGuesses.add(guessKey);
-        remainingLives--;
-        document.querySelectorAll('.mark')[remainingLives].classList.add('guessed');
+        loseLife();
 
         document.getElementById('guess-button').disabled = true; // Gray out guess
     }
 }
+function loseLife() {
+    remainingLives--;
+    document.querySelectorAll('.mark')[remainingLives].classList.add('guessed');
+    if (remainingLives === 0) {
+        gameOverLose();
+    }
+}
+function gameOverLose() {
+    setBoard();
+}
+function gameOverWin() {
 
+}
 
 function solveButtons() {
     const currentGroup = getGroup(selectedButtons[0]); // Lasy with index, but works :)
